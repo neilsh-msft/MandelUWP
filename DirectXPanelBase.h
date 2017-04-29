@@ -15,7 +15,7 @@ namespace DirectXPanels
     public ref class DirectXPanelBase : public Windows::UI::Xaml::Controls::SwapChainPanel
     {
     protected private:
-        DirectXPanelBase();
+        DirectXPanelBase(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel);
 
         virtual void CreateDeviceIndependentResources();
         virtual void CreateDeviceResources();
@@ -29,6 +29,8 @@ namespace DirectXPanels
 
         virtual void Render() { };
         virtual void Present();
+
+		Windows::UI::Xaml::Controls::SwapChainPanel ^						m_ref;
 
         Microsoft::WRL::ComPtr<ID3D11Device1>                               m_d3dDevice;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext1>                        m_d3dContext;

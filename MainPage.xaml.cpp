@@ -27,8 +27,9 @@ MainPage::MainPage()
 {
 	InitializeComponent();
 
-	m_mandel = ref new MandelPanel();
-	m_mandel->Run(panel);
+	m_mandel = ref new MandelPanel(panel);
+	m_mandel->Init();
+	m_mandel->Run();
 
 }
 

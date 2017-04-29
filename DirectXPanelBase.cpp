@@ -36,17 +36,18 @@ using namespace DX;
 
 static const float m_dipsPerInch = 96.0f;
 
-DirectXPanelBase::DirectXPanelBase() :
+DirectXPanelBase::DirectXPanelBase(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel) :
+	m_ref(panel),
     m_loadingComplete(false),
-    m_backgroundColor(D2D1::ColorF(D2D1::ColorF::White)), // Default to white background.
+    m_backgroundColor(D2D1::ColorF(D2D1::ColorF::Black)), // Default to black background.
     m_alphaMode(DXGI_ALPHA_MODE_UNSPECIFIED), // Default to ignore alpha, which can provide better performance if transparency is not required.
     m_compositionScaleX(1.0f),
     m_compositionScaleY(1.0f),
     m_height(1.0f),
     m_width(1.0f)
 {
-    this->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(this, &DirectXPanelBase::OnSizeChanged);
-    this->CompositionScaleChanged += ref new Windows::Foundation::TypedEventHandler<SwapChainPanel^, Object^>(this, &DirectXPanelBase::OnCompositionScaleChanged);
+    m_ref->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(this, &DirectXPanelBase::OnSizeChanged);
+    m_ref->CompositionScaleChanged += ref new Windows::Foundation::TypedEventHandler<SwapChainPanel^, Object^>(this, &DirectXPanelBase::OnCompositionScaleChanged);
     Application::Current->Suspending += ref new SuspendingEventHandler(this, &DirectXPanelBase::OnSuspending);
     Application::Current->Resuming += ref new EventHandler<Object^>(this, &DirectXPanelBase::OnResuming);
 }
@@ -161,7 +162,7 @@ void DirectXPanelBase::CreateSizeDependentResources()
     m_renderTargetWidth = m_width * m_compositionScaleX;
     m_renderTargetHeight = m_height * m_compositionScaleY;
 
-    // If the swap chain already exists, then resize it.
+	// If the swap chain already exists, then resize it.
     if (m_swapChain != nullptr)
     {
         HRESULT hr = m_swapChain->ResizeBuffers(
@@ -236,12 +237,12 @@ void DirectXPanelBase::CreateSizeDependentResources()
             dxgiDevice->SetMaximumFrameLatency(1)
             );
 
-        Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([=]()
+        m_ref->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([=]()
         {
             //Get backing native interface for SwapChainPanel.
             ComPtr<ISwapChainPanelNative> panelNative;
             ThrowIfFailed(
-                reinterpret_cast<IUnknown*>(this)->QueryInterface(IID_PPV_ARGS(&panelNative))
+                reinterpret_cast<IUnknown*>(m_ref)->QueryInterface(IID_PPV_ARGS(&panelNative))
                 );
 
             // Associate swap chain with SwapChainPanel.  This must be done on the UI thread.
@@ -337,13 +338,13 @@ void DirectXPanelBase::OnSizeChanged(Object^ sender, SizeChangedEventArgs^ e)
 
 void DirectXPanelBase::OnCompositionScaleChanged(SwapChainPanel ^sender, Object ^args)
 {
-    if (m_compositionScaleX != CompositionScaleX || m_compositionScaleY != CompositionScaleY)
+    if (m_compositionScaleX != m_ref->CompositionScaleX || m_compositionScaleY != m_ref->CompositionScaleY)
     {        
         critical_section::scoped_lock lock(m_criticalSection);
 
         // Store values so they can be accessed from a background thread.
-        m_compositionScaleX = this->CompositionScaleX;
-        m_compositionScaleY = this->CompositionScaleY;
+        m_compositionScaleX = m_ref->CompositionScaleX;
+        m_compositionScaleY = m_ref->CompositionScaleY;
         
         // Recreate size-dependent resources when the composition scale changes.
         CreateSizeDependentResources();
