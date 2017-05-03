@@ -131,20 +131,23 @@ void MandelPanel::Render()
 		width, height, 1);
 
 	ComPtr<ID3D11Texture2D> textureBuf(CreateAndCopyToDebugBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_textureOutput.Get()));
+	textureBuf.Get()->Release();
 
 	ComPtr<ID3D11Texture2D> swapchainBuf(CreateAndCopyToDynamicBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_swapchainTexture.Get()));
+	swapchainBuf.Get()->Release();
 
-	D3D11_MAPPED_SUBRESOURCE mappedSwapchain;
-	D3D11_MAPPED_SUBRESOURCE mappedTexture;
-	D3D11_TEXTURE2D_DESC swapchainDesc;
-	D3D11_TEXTURE2D_DESC textureDesc;
+	D3D11_MAPPED_SUBRESOURCE mappedSwapchain = { 0 };
+	D3D11_MAPPED_SUBRESOURCE mappedTexture = { 0 };
+	D3D11_TEXTURE2D_DESC swapchainDesc = { 0 };
+	D3D11_TEXTURE2D_DESC textureDesc = { 0 };
 	swapchainBuf->GetDesc(&swapchainDesc);
 	textureBuf->GetDesc(&textureDesc);
-	DX::ThrowIfFailed(m_d3dContext->Map(swapchainBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSwapchain));
-	DX::ThrowIfFailed(m_d3dContext->Map(textureBuf.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture));
 
 	assert(swapchainDesc.Height == textureDesc.Height);
 	assert(swapchainDesc.Width == textureDesc.Width);
+
+	DX::ThrowIfFailed(m_d3dContext->Map(textureBuf.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture));
+	DX::ThrowIfFailed(m_d3dContext->Map(swapchainBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSwapchain));
 
 	float* src = (float *)mappedTexture.pData;
 	BYTE* dst = (BYTE *)mappedSwapchain.pData;
@@ -171,52 +174,9 @@ void MandelPanel::Render()
 	m_d3dContext->Unmap(textureBuf.Get(), 0);
 
 	m_d3dContext->CopyResource(m_swapchainTexture.Get(), swapchainBuf.Get());
-	
-#if false
-    m_d2dContext->BeginDraw();
-	m_d2dContext->Clear(m_backgroundColor);
-	D2D1_RECT_F rect = { 10, 0, m_renderTargetWidth - 10, m_renderTargetHeight - 10 };
-	ComPtr<ID2D1Bitmap> bitmap;
 
-
-
-	ComPtr<ID2D1SolidColorBrush> brush;
-
-	DX::ThrowIfFailed(m_d2dContext->CreateSolidColorBrush(D2D1::ColorF(1.0,1.0,1.0,1.0), brush.GetAddressOf()));
-
-	m_d2dContext->FillRectangle(&rect, brush.Get());
-	m_d2dContext->EndDraw();
-#endif
-
-#if false
-	m_d2dContext->BeginDraw();
-	m_d2dContext->Clear(m_backgroundColor);
-
-	// Set up simple tic-tac-toe game board.
-	float horizontalSpacing = m_renderTargetWidth / 3.0f;
-	float verticalSpacing = m_renderTargetHeight / 3.0f;
-
-	// Since the unit mode is set to pixels in CreateDeviceResources(), here we scale the line thickness by the composition scale so that elements 
-	// are rendered in the same position but larger as you zoom in. Whether or not the composition scale should be factored into the size or position 
-	// of elements depends on the app's scenario.
-	float lineThickness = m_compositionScaleX * 2.0f;
-	float strokeThickness = m_compositionScaleX * 4.0f;
-
-	// Draw grid lines.
-	m_d2dContext->DrawLine(Point2F(horizontalSpacing, 0), Point2F(horizontalSpacing, m_renderTargetHeight), m_strokeBrush.Get(), lineThickness);
-	m_d2dContext->DrawLine(Point2F(horizontalSpacing * 2, 0), Point2F(horizontalSpacing * 2, m_renderTargetHeight), m_strokeBrush.Get(), lineThickness);
-	m_d2dContext->DrawLine(Point2F(0, verticalSpacing), Point2F(m_renderTargetWidth, verticalSpacing), m_strokeBrush.Get(), lineThickness);
-	m_d2dContext->DrawLine(Point2F(0, verticalSpacing * 2), Point2F(m_renderTargetWidth, verticalSpacing * 2), m_strokeBrush.Get(), lineThickness);
-
-	// Draw center circle.
-	m_d2dContext->DrawEllipse(Ellipse(Point2F(m_renderTargetWidth / 2.0f, m_renderTargetHeight / 2.0f), horizontalSpacing / 2.0f - strokeThickness, verticalSpacing / 2.0f - strokeThickness), m_strokeBrush.Get(), strokeThickness);
-
-	// Draw top left X.
-	m_d2dContext->DrawLine(Point2F(0, 0), Point2F(horizontalSpacing - lineThickness, verticalSpacing - lineThickness), m_strokeBrush.Get(), strokeThickness);
-	m_d2dContext->DrawLine(Point2F(horizontalSpacing - lineThickness, 0), Point2F(0, verticalSpacing - lineThickness), m_strokeBrush.Get(), strokeThickness);
-
-	m_d2dContext->EndDraw();
-#endif
+	swapchainBuf.Reset();
+	textureBuf.Reset();
 
 	Present();
 }
