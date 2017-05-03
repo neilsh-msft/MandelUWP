@@ -332,8 +332,8 @@ void DirectXPanelBase::Present()
 
     HRESULT hr = S_OK;
 
-    hr = m_swapChain->Present1(1, 0, &parameters);
-//	hr = m_swapChain->Present(1, 0);
+//    hr = m_swapChain->Present1(1, 0, &parameters);
+	hr = m_swapChain->Present(1, 0);
 
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
     {

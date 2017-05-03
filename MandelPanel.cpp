@@ -58,6 +58,12 @@ ConstantBuffer g_constants;
 
 MandelPanel::MandelPanel(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel) : DirectXPanelBase(panel)
 {
+	a = 0.0;
+	b = 0.0;
+	d = 1.0;
+
+	panel->PointerWheelChanged += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &MandelIoTCore::MandelPanel::OnPointerWheelChanged);
+
 }
 
 void MandelPanel::Init()
@@ -94,10 +100,10 @@ void MandelPanel::CreateSizeDependentResources()
 	DXGI_SWAP_CHAIN_DESC sd;
 	DX::ThrowIfFailed(m_swapChain->GetDesc(&sd));
 	
-	g_constants.a0 = -2.0;
-	g_constants.b0 = -2.0;
-	g_constants.da = 4.0 / width;
-	g_constants.db = 4.0 / width;
+	g_constants.a0 = a - (d * 2.0);
+	g_constants.b0 = b - (d * 2.0);
+	g_constants.da = 4.0 * d / width;
+	g_constants.db = 4.0 * d / width;
 	g_constants.cycle = -110;
 	g_constants.max_iterations = 100;
 	g_constants.julia = false;
@@ -684,13 +690,15 @@ void RunComputeShader(ID3D11Device *pDevice, ID3D11DeviceContext* pd3dImmediateC
 
 	pd3dImmediateContext->Dispatch(X, Y, Z);
 
+#if false
 	// read back result from GPU
 	ComPtr<ID3D11Texture2D> debugBuf(CreateAndCopyToDebugBuf(pDevice, pd3dImmediateContext, pOutputBuf));
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	DX::ThrowIfFailed(pd3dImmediateContext->Map(debugBuf.Get(), 0, D3D11_MAP_READ, 0, &mappedResource));
 	ULONG32 *p = (ULONG32 *)mappedResource.pData;
 	pd3dImmediateContext->Unmap(debugBuf.Get(), 0);
-	
+#endif
+
 	// cleanup
 	pd3dImmediateContext->CSSetShader(nullptr, nullptr, 0);
 
@@ -704,3 +712,32 @@ void RunComputeShader(ID3D11Device *pDevice, ID3D11DeviceContext* pd3dImmediateC
 	pd3dImmediateContext->CSSetConstantBuffers(0, 1, ppCBnullptr);
 }
 
+
+
+void MandelIoTCore::MandelPanel::OnPointerWheelChanged(Platform::Object ^sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs ^e)
+{
+	Windows::UI::Input::PointerPoint ^p = e->GetCurrentPoint(this);
+	
+	double change = pow(2.0, p->Properties->MouseWheelDelta / 240.0);
+
+	d *= change;
+	if (d > 4.0)
+	{
+		d = 4.0;
+	}
+
+
+	CreateSizeDependentResources();
+	Render();
+	//this->Dispatcher->ProcessEvents(Windows::UI::Core::CoreProcessEventsOption::ProcessAllIfPresent);
+	
+}
+
+void MandelPanel::StartRenderLoop()
+{
+
+}
+
+void MandelPanel::StopRenderLoop()
+{
+}

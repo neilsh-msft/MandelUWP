@@ -15,6 +15,9 @@ namespace MandelIoTCore
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_computeOutput;
 
+		double a, b;
+		double d;
+
 	public:
 		MandelPanel(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel);
 
@@ -29,5 +32,10 @@ namespace MandelIoTCore
 
 		void Init();
 		void Run();
+
+		void StartRenderLoop();
+		void StopRenderLoop();
+
+		void OnPointerWheelChanged(Platform::Object ^sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs ^e);
 	};
 }

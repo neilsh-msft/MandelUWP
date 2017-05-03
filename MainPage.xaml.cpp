@@ -30,6 +30,14 @@ MainPage::MainPage()
 	m_mandel = ref new MandelPanel(panel);
 	m_mandel->Init();
 	m_mandel->Run();
+}
 
+void MainPage::OnNavigatedTo(NavigationEventArgs ^e)
+{
+	m_mandel->StartRenderLoop();
+}
+void MainPage::OnNavigatedFrom(NavigationEventArgs ^e)
+{
+	m_mandel->StopRenderLoop();
 }
 
