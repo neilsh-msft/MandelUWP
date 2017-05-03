@@ -71,4 +71,7 @@
   <ItemGroup>
     <Page Include="MainPage.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="CSMandelJulia_scalarFloat.hlsl" />
+  </ItemGroup>
 </Project>

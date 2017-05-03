@@ -36,6 +36,8 @@ namespace DirectXPanels
         Microsoft::WRL::ComPtr<ID3D11DeviceContext1>                        m_d3dContext;
         Microsoft::WRL::ComPtr<IDXGISwapChain2>                             m_swapChain;
 
+//        Microsoft::WRL::ComPtr<IDXGISwapChain>                             m_swapChain;
+
         Microsoft::WRL::ComPtr<ID2D1Factory2>                               m_d2dFactory;
         Microsoft::WRL::ComPtr<ID2D1Device>                                 m_d2dDevice;
         Microsoft::WRL::ComPtr<ID2D1DeviceContext>                          m_d2dContext;

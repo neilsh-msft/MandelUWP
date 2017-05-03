@@ -98,6 +98,8 @@ void DirectXPanelBase::CreateDeviceResources()
         D3D_FEATURE_LEVEL_9_1
     };
 
+	D3D_FEATURE_LEVEL level;
+
     // Create the DX11 API device object, and get a corresponding context.
     ComPtr<ID3D11Device> device;
     ComPtr<ID3D11DeviceContext> context;
@@ -105,13 +107,15 @@ void DirectXPanelBase::CreateDeviceResources()
         D3D11CreateDevice(
         nullptr,                    // Specify null to use the default adapter.
         D3D_DRIVER_TYPE_HARDWARE,
+//		D3D_DRIVER_TYPE_WARP,
+//      D3D_DRIVER_TYPE_REFERENCE,
         0,
         creationFlags,              // Optionally set debug and Direct2D compatibility flags.
         featureLevels,              // List of feature levels this app can support.
         ARRAYSIZE(featureLevels),
         D3D11_SDK_VERSION,          // Always set this to D3D11_SDK_VERSION for Windows Store apps.
         &device,                    // Returns the Direct3D device created.
-        NULL,                       // Returns feature level of device created.
+        &level,                       // Returns feature level of device created.
         &context                    // Returns the device immediate context.
         )
         );
@@ -187,7 +191,8 @@ void DirectXPanelBase::CreateSizeDependentResources()
     }
     else // Otherwise, create a new one.
     {
-        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
+
+DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
         swapChainDesc.Width = static_cast<UINT>(m_renderTargetWidth);      // Match the size of the panel.
         swapChainDesc.Height = static_cast<UINT>(m_renderTargetHeight);
         swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                  // This is the most common swap chain format.
@@ -195,10 +200,28 @@ void DirectXPanelBase::CreateSizeDependentResources()
         swapChainDesc.SampleDesc.Count = 1;                                 // Don't use multi-sampling.
         swapChainDesc.SampleDesc.Quality = 0;
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.BufferCount = 2;                                      // Use double buffering to enable flip.
+//        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
+		swapChainDesc.BufferCount = 2;                                      // Use double buffering to enable flip.
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;        // All Windows Store apps must use this SwapEffect.
         swapChainDesc.Flags = 0;
         swapChainDesc.AlphaMode = m_alphaMode;
+/*
+		DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
+		swapChainDesc.BufferDesc.Width = static_cast<UINT>(m_renderTargetWidth);      // Match the size of the panel.
+		swapChainDesc.BufferDesc.Height = static_cast<UINT>(m_renderTargetHeight);
+		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                  // This is the most common swap chain format.
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+		swapChainDesc.OutputWindow = 0;
+		swapChainDesc.SampleDesc.Count = 1;                                 // Don't use multi-sampling.
+		swapChainDesc.SampleDesc.Quality = 0;
+		//        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
+		swapChainDesc.BufferCount = 2;                                      // Use double buffering to enable flip.
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;        // All Windows Store apps must use this SwapEffect.
+		swapChainDesc.Flags = 0;
+		swapChainDesc.Windowed = 1;
+*/
 
         // Get underlying DXGI Device from D3D Device.
         ComPtr<IDXGIDevice1> dxgiDevice;
@@ -220,14 +243,24 @@ void DirectXPanelBase::CreateSizeDependentResources()
 
         ComPtr<IDXGISwapChain1> swapChain;
         // Create swap chain.
-        ThrowIfFailed(
-            dxgiFactory->CreateSwapChainForComposition(
-            m_d3dDevice.Get(),
+		ThrowIfFailed(
+			dxgiFactory->CreateSwapChainForComposition(
+					m_d3dDevice.Get(),
+					&swapChainDesc,
+					nullptr,
+					&swapChain
+				)
+			);
+/*
+		ThrowIfFailed(
+            dxgiFactory->CreateSwapChain(
+			m_d3dDevice.Get(),
             &swapChainDesc,
-            nullptr,
-            &swapChain
+            (IDXGISwapChain **)(swapChain.GetAddressOf())
             )
             );
+*/
+
         swapChain.As(&m_swapChain);
 
         // Ensure that DXGI does not queue more than one frame at a time. This both reduces 
@@ -260,7 +293,7 @@ void DirectXPanelBase::CreateSizeDependentResources()
     inverseScale._11 = 1.0f / m_compositionScaleX;
     inverseScale._22 = 1.0f / m_compositionScaleY;
 
-    m_swapChain->SetMatrixTransform(&inverseScale);
+//    m_swapChain->SetMatrixTransform(&inverseScale);
 
     D2D1_BITMAP_PROPERTIES1 bitmapProperties =
         BitmapProperties1(
@@ -300,6 +333,7 @@ void DirectXPanelBase::Present()
     HRESULT hr = S_OK;
 
     hr = m_swapChain->Present1(1, 0, &parameters);
+//	hr = m_swapChain->Present(1, 0);
 
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
     {
