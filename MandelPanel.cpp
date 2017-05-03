@@ -40,9 +40,7 @@ void RunComputeShader(_In_ ID3D11Device* pDevice,_In_ ID3D11DeviceContext* pd3dI
 	_In_ UINT nNumViews, _In_reads_(nNumViews) ID3D11ShaderResourceView** pShaderResourceViews,
 	_In_opt_ ID3D11Buffer* pCBCS, _In_reads_opt_(dwNumDataBytes) void* pCSData, _In_ DWORD dwNumDataBytes,
 	_In_ ID3D11UnorderedAccessView* pUnorderedAccessView,
-//	_In_ ID3D11Buffer* pOutputBuf, // debug only
-	_In_ ID3D11Texture2D* pOutputBuf, // debug only
-_In_ UINT X, _In_ UINT Y, _In_ UINT Z);
+	_In_ UINT X, _In_ UINT Y, _In_ UINT Z);
 
 struct ConstantBuffer
 {
@@ -63,7 +61,7 @@ MandelPanel::MandelPanel(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel) : 
 	d = 1.0;
 
 	panel->PointerWheelChanged += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &MandelIoTCore::MandelPanel::OnPointerWheelChanged);
-
+	panel->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &MandelIoTCore::MandelPanel::OnPointerPressed);
 }
 
 void MandelPanel::Init()
@@ -105,7 +103,7 @@ void MandelPanel::CreateSizeDependentResources()
 	g_constants.da = 4.0 * d / width;
 	g_constants.db = 4.0 * d / width;
 	g_constants.cycle = -110;
-	g_constants.max_iterations = 100;
+	g_constants.max_iterations = 1024;
 	g_constants.julia = false;
 	g_constants.ja0 = 0.0;
 	g_constants.jb0 = 0.0;
@@ -127,14 +125,12 @@ void MandelPanel::Render()
 	UINT width = static_cast<UINT>(m_renderTargetWidth);
 
 	RunComputeShader(m_d3dDevice.Get(), m_d3dContext.Get(), m_shader.Get(), 0, nullptr, m_constantBuffer.Get(), &g_constants, sizeof(g_constants), m_computeOutputUAV.Get(),
-		m_textureOutput.Get(),  // debug only
 		width, height, 1);
 
-	ComPtr<ID3D11Texture2D> textureBuf(CreateAndCopyToDebugBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_textureOutput.Get()));
-	textureBuf.Get()->Release();
-
-	ComPtr<ID3D11Texture2D> swapchainBuf(CreateAndCopyToDynamicBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_swapchainTexture.Get()));
-	swapchainBuf.Get()->Release();
+	ComPtr<ID3D11Texture2D> textureBuf;
+	ComPtr<ID3D11Texture2D> swapchainBuf;
+	*swapchainBuf.GetAddressOf() = CreateAndCopyToDynamicBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_swapchainTexture.Get());
+	*textureBuf.GetAddressOf() = CreateAndCopyToDebugBuf(m_d3dDevice.Get(), m_d3dContext.Get(), m_textureOutput.Get());
 
 	D3D11_MAPPED_SUBRESOURCE mappedSwapchain = { 0 };
 	D3D11_MAPPED_SUBRESOURCE mappedTexture = { 0 };
@@ -632,7 +628,6 @@ void RunComputeShader(ID3D11Device *pDevice, ID3D11DeviceContext* pd3dImmediateC
 	UINT nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
 	ID3D11Buffer* pCBCS, void* pCSData, DWORD dwNumDataBytes,
 	ID3D11UnorderedAccessView* pUnorderedAccessView,
-	ID3D11Texture2D* pOutputBuf,
 	UINT X, UINT Y, UINT Z)
 {
 	pd3dImmediateContext->CSSetShader(pComputeShader, nullptr, 0);
@@ -649,15 +644,6 @@ void RunComputeShader(ID3D11Device *pDevice, ID3D11DeviceContext* pd3dImmediateC
 	}
 
 	pd3dImmediateContext->Dispatch(X, Y, Z);
-
-#if false
-	// read back result from GPU
-	ComPtr<ID3D11Texture2D> debugBuf(CreateAndCopyToDebugBuf(pDevice, pd3dImmediateContext, pOutputBuf));
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	DX::ThrowIfFailed(pd3dImmediateContext->Map(debugBuf.Get(), 0, D3D11_MAP_READ, 0, &mappedResource));
-	ULONG32 *p = (ULONG32 *)mappedResource.pData;
-	pd3dImmediateContext->Unmap(debugBuf.Get(), 0);
-#endif
 
 	// cleanup
 	pd3dImmediateContext->CSSetShader(nullptr, nullptr, 0);
@@ -678,7 +664,7 @@ void MandelIoTCore::MandelPanel::OnPointerWheelChanged(Platform::Object ^sender,
 {
 	Windows::UI::Input::PointerPoint ^p = e->GetCurrentPoint(this);
 	
-	double change = pow(2.0, p->Properties->MouseWheelDelta / 240.0);
+	double change = pow(2.0, - p->Properties->MouseWheelDelta / 240.0);
 
 	d *= change;
 	if (d > 4.0)
@@ -686,16 +672,31 @@ void MandelIoTCore::MandelPanel::OnPointerWheelChanged(Platform::Object ^sender,
 		d = 4.0;
 	}
 
+	CreateSizeDependentResources();
+	Render();
+}
+
+void MandelIoTCore::MandelPanel::OnPointerPressed(Platform::Object ^sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs ^e)
+{
+	Windows::UI::Input::PointerPoint ^p = e->GetCurrentPoint(this);
+
+	float x = p->Position.X;
+	float y = p->Position.Y;
+
+	a += (x / m_renderTargetWidth - 0.5) * d * 4;
+	b += (y / m_renderTargetHeight - 0.5) * d * 4;
+
+	a = min(a, 2.0);
+	a = max(a, -2.0);
+	b = min(b, 2.0);
+	b = max(b, -2.0);
 
 	CreateSizeDependentResources();
 	Render();
-	//this->Dispatcher->ProcessEvents(Windows::UI::Core::CoreProcessEventsOption::ProcessAllIfPresent);
-	
 }
 
 void MandelPanel::StartRenderLoop()
 {
-
 }
 
 void MandelPanel::StopRenderLoop()

@@ -37,5 +37,6 @@ namespace MandelIoTCore
 		void StopRenderLoop();
 
 		void OnPointerWheelChanged(Platform::Object ^sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs ^e);
+		void OnPointerPressed(Platform::Object ^sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs ^e);
 	};
 }
