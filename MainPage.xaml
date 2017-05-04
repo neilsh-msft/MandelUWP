@@ -8,6 +8,6 @@
     mc:Ignorable="d">
 
     <Grid x:Name="grid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <SwapChainPanel x:Name="panel" x:FieldModifier="private" />
+        <SwapChainPanel x:Name="swapchainPanel" x:FieldModifier="private" />
     </Grid>
 </Page>

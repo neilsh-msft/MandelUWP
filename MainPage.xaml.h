@@ -17,9 +17,6 @@ namespace MandelIoTCore
 	private:
 		MandelPanel ^ m_mandel;
 
-		void StartRenderLoop();
-		void StopRenderLoop();
-
 	public:
 		MainPage();
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs ^e) override;

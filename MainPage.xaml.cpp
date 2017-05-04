@@ -21,13 +21,12 @@ using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
 
-// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 MainPage::MainPage()
 {
 	InitializeComponent();
 
-	m_mandel = ref new MandelPanel(panel);
+	// Construct the mandelbrot panel using the swapchain panel defined in the XAML
+	m_mandel = ref new MandelPanel(swapchainPanel);
 	m_mandel->Init();
 	m_mandel->Run();
 }
@@ -36,6 +35,7 @@ void MainPage::OnNavigatedTo(NavigationEventArgs ^e)
 {
 	m_mandel->StartRenderLoop();
 }
+
 void MainPage::OnNavigatedFrom(NavigationEventArgs ^e)
 {
 	m_mandel->StopRenderLoop();

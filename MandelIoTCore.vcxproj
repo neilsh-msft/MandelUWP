@@ -136,6 +136,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CSHelper.h" />
     <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="DirectXPanelBase.h" />
     <ClInclude Include="MandelPanel.h" />
@@ -176,6 +177,7 @@
     <ClCompile Include="App.xaml.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="CSHelper.cpp" />
     <ClCompile Include="DirectXPanelBase.cpp" />
     <ClCompile Include="MainPage.xaml.cpp">
       <DependentUpon>MainPage.xaml</DependentUpon>

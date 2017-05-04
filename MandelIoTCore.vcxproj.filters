@@ -20,6 +20,9 @@
     <ClCompile Include="DirectXPanelBase.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="CSHelper.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -36,6 +39,9 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="CSHelper.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
@@ -72,6 +78,6 @@
     <Page Include="MainPage.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="CSMandelJulia_scalarFloat.hlsl" />
+    <Media Include="CSMandelJulia_scalarFloat.hlsl" />
   </ItemGroup>
 </Project>

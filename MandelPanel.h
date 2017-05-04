@@ -2,21 +2,18 @@
 
 namespace MandelIoTCore
 {
-	// Base class for a SwapChainPanel-based DirectX rendering surface to be used in XAML apps.
+	// DirectX based Mandelbrot generator panel
 	[Windows::Foundation::Metadata::WebHostHidden]
 	ref class MandelPanel sealed : public DirectXPanels::DirectXPanelBase
 	{
 	private:
-		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> m_computeOutputUAV;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_textureOutput;
 		Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_shader;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_swapchainTexture;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> m_computeOutputUAV;
 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> m_computeOutput;
-
-		double a, b;
-		double d;
+		double a, b;	// real and imaginary origin for set
+		double d;		// inverse magnification
 
 	public:
 		MandelPanel(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel);

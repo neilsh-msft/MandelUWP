@@ -173,8 +173,8 @@ void DirectXPanelBase::CreateSizeDependentResources()
             2,
             static_cast<UINT>(m_renderTargetWidth),
             static_cast<UINT>(m_renderTargetHeight),
-            DXGI_FORMAT_B8G8R8A8_UNORM,
-            0
+            DXGI_FORMAT_R8G8B8A8_UNORM,  // DXGI_FORMAT_B8G8R8A8_UNORM cannot be used for UAV resources
+			0
             );
 
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
@@ -195,35 +195,17 @@ void DirectXPanelBase::CreateSizeDependentResources()
 DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
         swapChainDesc.Width = static_cast<UINT>(m_renderTargetWidth);      // Match the size of the panel.
         swapChainDesc.Height = static_cast<UINT>(m_renderTargetHeight);
-        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                  // This is the most common swap chain format.
-        swapChainDesc.Stereo = false;
+        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // DXGI_FORMAT_B8G8R8A8_UNORM cannot be used for UAV resources
+		swapChainDesc.Stereo = false;
         swapChainDesc.SampleDesc.Count = 1;                                 // Don't use multi-sampling.
         swapChainDesc.SampleDesc.Quality = 0;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-//        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
 		swapChainDesc.BufferCount = 2;                                      // Use double buffering to enable flip.
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;        // All Windows Store apps must use this SwapEffect.
         swapChainDesc.Flags = 0;
         swapChainDesc.AlphaMode = m_alphaMode;
-/*
-		DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
-		swapChainDesc.BufferDesc.Width = static_cast<UINT>(m_renderTargetWidth);      // Match the size of the panel.
-		swapChainDesc.BufferDesc.Height = static_cast<UINT>(m_renderTargetHeight);
-		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                  // This is the most common swap chain format.
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-		swapChainDesc.OutputWindow = 0;
-		swapChainDesc.SampleDesc.Count = 1;                                 // Don't use multi-sampling.
-		swapChainDesc.SampleDesc.Quality = 0;
-		//        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
-		swapChainDesc.BufferCount = 2;                                      // Use double buffering to enable flip.
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;        // All Windows Store apps must use this SwapEffect.
-		swapChainDesc.Flags = 0;
-		swapChainDesc.Windowed = 1;
-*/
 
-        // Get underlying DXGI Device from D3D Device.
+		// Get underlying DXGI Device from D3D Device.
         ComPtr<IDXGIDevice1> dxgiDevice;
         ThrowIfFailed(
             m_d3dDevice.As(&dxgiDevice)
@@ -251,17 +233,8 @@ DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
 					&swapChain
 				)
 			);
-/*
-		ThrowIfFailed(
-            dxgiFactory->CreateSwapChain(
-			m_d3dDevice.Get(),
-            &swapChainDesc,
-            (IDXGISwapChain **)(swapChain.GetAddressOf())
-            )
-            );
-*/
 
-        swapChain.As(&m_swapChain);
+        ThrowIfFailed(swapChain.As(&m_swapChain));
 
         // Ensure that DXGI does not queue more than one frame at a time. This both reduces 
         // latency and ensures that the application will only render after each VSync, minimizing 
@@ -298,8 +271,8 @@ DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
     D2D1_BITMAP_PROPERTIES1 bitmapProperties =
         BitmapProperties1(
         D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-        PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-        m_dipsPerInch * m_compositionScaleX,
+		PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // DXGI_FORMAT_B8G8R8A8_UNORM cannot be used with UAV resources
+	    m_dipsPerInch * m_compositionScaleX,
         m_dipsPerInch * m_compositionScaleY
         );
 
@@ -324,15 +297,8 @@ DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
 
 void DirectXPanelBase::Present()
 {
-    DXGI_PRESENT_PARAMETERS parameters = { 0 };
-    parameters.DirtyRectsCount = 0;
-    parameters.pDirtyRects = nullptr;
-    parameters.pScrollRect = nullptr;
-    parameters.pScrollOffset = nullptr;
-
     HRESULT hr = S_OK;
 
-//    hr = m_swapChain->Present1(1, 0, &parameters);
 	hr = m_swapChain->Present(1, 0);
 
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
