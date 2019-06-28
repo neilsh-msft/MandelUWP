@@ -11,6 +11,7 @@ namespace Windows {
     namespace UI {
         namespace Xaml {
             namespace Controls {
+                ref class Grid;
                 ref class SwapChainPanel;
             }
         }
@@ -30,9 +31,15 @@ namespace MandelIoTCore
         virtual ::Windows::UI::Xaml::Markup::IComponentConnector^ GetBindingConnector(int connectionId, ::Platform::Object^ target);
     
     private:
+        void UnloadObject(::Windows::UI::Xaml::DependencyObject^ dependencyObject);
+        void DisconnectUnloadedObject(int connectionId);
+    
+    private:
         bool _contentLoaded;
     
-        private: ::Windows::UI::Xaml::Controls::SwapChainPanel^ panel;
+    
+        private: ::Windows::UI::Xaml::Controls::Grid^ grid;
+        private: ::Windows::UI::Xaml::Controls::SwapChainPanel^ swapchainPanel;
     };
 }
 
