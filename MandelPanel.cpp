@@ -19,6 +19,8 @@ using namespace Windows::UI::Xaml::Controls;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
+// QC doesn't support double precision
+#if 0
 struct ConstantBuffer
 {
 	double a0, b0, da, db;
@@ -28,8 +30,22 @@ struct ConstantBuffer
 	bool julia;  // julia or mandel
 	int  cycle;
 };
+#else
+struct ConstantBuffer
+{
+	float a0, b0, da, db;
+	float  ja0, jb0; // julia set point
+
+	int max_iterations;
+	bool julia;  // julia or mandel
+	int  cycle;
+	int reserved[3];  // padding out to 16 byte boundary
+};
+#endif
 
 ConstantBuffer g_constants;
+
+static_assert(sizeof(g_constants) % 16 == 0, "ConstantBuffer not multiple of 16");
 
 MandelPanel::MandelPanel(Windows::UI::Xaml::Controls::SwapChainPanel ^ panel) : DirectXPanelBase(panel)
 {
@@ -56,8 +72,10 @@ void MandelPanel::CreateDeviceResources()
 //	m_d2dContext->SetUnitMode(D2D1_UNIT_MODE::D2D1_UNIT_MODE_PIXELS);
 
 	m_loadingComplete = true;
-
-	DX::ThrowIfFailed(CreateComputeShader(L"CSMandelJulia_scalarFloat.hlsl", "CSMandelJulia_scalarFloat", m_d3dDevice.Get(), m_shader.GetAddressOf()));
+	auto d3d = m_d3dDevice.Get();
+	auto shader = m_shader.GetAddressOf();
+	auto result = CreateComputeShader(L"CSMandelJulia_scalarFloat.hlsl", "CSMandelJulia_scalarFloat", d3d, shader);
+	DX::ThrowIfFailed(result);
 }
 
 void MandelPanel::CreateSizeDependentResources()
@@ -69,18 +87,18 @@ void MandelPanel::CreateSizeDependentResources()
 
 	DirectXPanelBase::CreateSizeDependentResources();
 
-	UINT height = static_cast<UINT>(m_renderTargetHeight);
-	UINT width = static_cast<UINT>(m_renderTargetWidth);
+	UINT height = static_cast<UINT>(m_renderTargetHeight / m_compositionScaleY);
+	UINT width = static_cast<UINT>(m_renderTargetWidth / m_compositionScaleX);
 
 #ifdef _DEBUG
 	DXGI_SWAP_CHAIN_DESC sd;
 	DX::ThrowIfFailed(m_swapChain->GetDesc(&sd));
 #endif 
 
-	g_constants.a0 = a - (d * 2.0);
-	g_constants.b0 = b - (d * 2.0);
-	g_constants.da = 4.0 * d / width;
-	g_constants.db = 4.0 * d / width;
+	g_constants.a0 = (float)(a - (d * 2.0));
+	g_constants.b0 = (float)(b - (d * 2.0));
+	g_constants.da = (float)(4.0 * d / width);
+	g_constants.db = (float)(4.0 * d / width);  // would use height, but then output aspect ratio is incorrect
 	g_constants.cycle = -110;
 	g_constants.max_iterations = 1024;
 	g_constants.julia = false;
@@ -88,13 +106,16 @@ void MandelPanel::CreateSizeDependentResources()
 	g_constants.jb0 = 0.0;
 
 	// create constant buffer for CS
-	DX::ThrowIfFailed(CreateConstantBuffer(m_d3dDevice.Get(), sizeof(g_constants), m_constantBuffer.ReleaseAndGetAddressOf()));
+	auto hr = CreateConstantBuffer(m_d3dDevice.Get(), sizeof(g_constants), m_constantBuffer.ReleaseAndGetAddressOf());
+	DX::ThrowIfFailed(hr);
 
 	// get the swapchain background texture buffer and map to a UAV
-	DX::ThrowIfFailed(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void **)m_swapchainTexture.ReleaseAndGetAddressOf()));
+	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)m_swapchainTexture.ReleaseAndGetAddressOf());
+	DX::ThrowIfFailed(hr);
 	
 	// get a UAV on the swapchain background texture buffer for the CS to write to
-	DX::ThrowIfFailed(CreateTextureUAV(m_d3dDevice.Get(), m_swapchainTexture.Get(), m_computeOutputUAV.ReleaseAndGetAddressOf()));
+	hr = CreateTextureUAV(m_d3dDevice.Get(), m_swapchainTexture.Get(), m_computeOutputUAV.ReleaseAndGetAddressOf());
+	DX::ThrowIfFailed(hr);
 }
 
 void MandelPanel::Render()
@@ -104,8 +125,8 @@ void MandelPanel::Render()
 		return;
 	}
 
-	UINT height = static_cast<UINT>(m_renderTargetHeight);
-	UINT width = static_cast<UINT>(m_renderTargetWidth);
+	UINT height = static_cast<UINT>(m_renderTargetHeight) * m_compositionScaleY;
+	UINT width = static_cast<UINT>(m_renderTargetWidth) * m_compositionScaleX;
 
 	RunComputeShader(m_d3dDevice.Get(), m_d3dContext.Get(), m_shader.Get(), 0, nullptr, m_constantBuffer.Get(), &g_constants, sizeof(g_constants), m_computeOutputUAV.Get(),
 		width, height, 1);
@@ -182,8 +203,8 @@ void MandelIoTCore::MandelPanel::OnPointerPressed(Platform::Object ^sender, Wind
 	float x = p->Position.X;
 	float y = p->Position.Y;
 
-	a += (x / m_renderTargetWidth - 0.5) * d * 4;
-	b += (y / m_renderTargetHeight - 0.5) * d * 4;
+	a += ((x * m_compositionScaleX) / m_renderTargetWidth - 0.5) * d * 4;
+	b += ((y * m_compositionScaleY) / m_renderTargetHeight - 0.5) * (m_renderTargetWidth / m_renderTargetHeight) * d * 4;  // would use height, but display aspect ratio is off
 
 	a = min(a, 2.0);
 	a = max(a, -2.0);
