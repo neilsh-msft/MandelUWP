@@ -19,6 +19,7 @@ using namespace Windows::UI::Xaml::Controls;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
+#if 0
 struct ConstantBuffer
 {
 	double a0, b0, da, db;
@@ -28,6 +29,18 @@ struct ConstantBuffer
 	bool julia;  // julia or mandel
 	int  cycle;
 };
+#else
+struct ConstantBuffer
+{
+    float a0, b0, da, db;
+    float  ja0, jb0; // julia set point
+
+    int max_iterations;
+    bool julia;  // julia or mandel
+    int  cycle;
+    int reserved[3];
+};
+#endif
 
 ConstantBuffer g_constants;
 

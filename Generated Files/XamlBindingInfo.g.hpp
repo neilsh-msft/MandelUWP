@@ -15,6 +15,7 @@
 ::XamlBindingInfo::XamlBindings::XamlBindings(::XamlBindingInfo::IXamlBindings* pBindings)
     : _pBindings(pBindings)
 {
+    _pBindings->SetOwningBindingsClass(this);
 }
 
 ::XamlBindingInfo::XamlBindings::~XamlBindings()
@@ -100,9 +101,30 @@ void ::XamlBindingInfo::XamlBindings::Recycle()
     this->_pBindings->Recycle();
 }
 
-void ::XamlBindingInfo::XamlBindings::Disable(int lineNumber, int columnNumber)
+
+::Windows::UI::Xaml::Markup::IComponentConnector^ ::XamlBindingInfo::XamlBindings::GetBindingConnector(int connectionId, ::Platform::Object^ target)
 {
-    this->_pBindings->Disable(lineNumber, columnNumber);
+    return this->_pBindings->GetBindingConnector(connectionId, target);
+}
+
+::XamlBindingInfo::XamlBindings^ ::XamlBindingInfo::XamlBindings::GetParent()
+{
+    return this->_pBindings->GetParent();
+}
+
+void ::XamlBindingInfo::XamlBindings::SetParent(::XamlBindingInfo::XamlBindings^ parent)
+{
+    this->_pBindings->SetParent(parent);
+}
+
+bool ::XamlBindingInfo::XamlBindings::ContainsElement(int connectionId)
+{
+    return this->_pBindings->ContainsElement(connectionId);
+}
+
+void ::XamlBindingInfo::XamlBindings::RegisterForElementConnection(int connectionId, ::XamlBindingInfo::XamlBindings^ connector)
+{
+    this->_pBindings->RegisterForElementConnection(connectionId, connector);
 }
 
 // XamlBindingTrackingBase

@@ -6,6 +6,7 @@
 
 RWTexture2D<float4> output : register (u0);
 
+#if 0
 cbuffer cbCSMandel : register( b0 )
 {
   
@@ -16,7 +17,18 @@ cbuffer cbCSMandel : register( b0 )
 	bool julia;  // julia or mandel
 	int   cycle;
 };
+#else
+cbuffer cbCSMandel : register(b0)
+{
 
+    float a0, b0, da, db;
+    float  ja0, jb0; // julia set point
+
+    int max_iterations;
+    bool julia;  // julia or mandel
+    int   cycle;
+};
+#endif
 
 [numthreads(16, 16, 1)]
 //****************************************************************************

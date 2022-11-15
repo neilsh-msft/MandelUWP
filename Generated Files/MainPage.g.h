@@ -37,6 +37,7 @@ namespace MandelIoTCore
     private:
         bool _contentLoaded;
     
+        class MainPage_obj1_Bindings;
     
         private: ::Windows::UI::Xaml::Controls::Grid^ grid;
         private: ::Windows::UI::Xaml::Controls::SwapChainPanel^ swapchainPanel;
