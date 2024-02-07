@@ -80,7 +80,8 @@ void DirectXPanelBase::CreateDeviceResources()
 
 #if defined(_DEBUG)
     // If the project is in a debug build, enable debugging via SDK Layers with this flag.
-    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+//    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    // requires D3D11_1SDKLayers.dll which is only included with Windows 8 or 10 sdk :(
 #endif
 
     // This array defines the set of DirectX hardware feature levels this app will support.
